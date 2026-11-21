@@ -19,9 +19,11 @@ jobs:
       - name: PR Agent Code Review
         uses: the-pr-agent/pr-agent@main
         env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          MODEL: "gemini/gemini-1.5-flash"
+          CONFIG.MODEL: "gemini/gemini-1.5-flash"
+          CONFIG.FALLBACK_MODELS: '["gemini/gemini-1.5-flash"]'
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
