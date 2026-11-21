@@ -4,10 +4,17 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# A new push to the same PR cancels the older run
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
-  # Job 1: build and test. This is the real quality gate.
+  # Job 1: build and test. The real quality gate.
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     services:
       mysql:
@@ -44,7 +51,7 @@ jobs:
           SPRING_DATASOURCE_PASSWORD: ci_password
           DB_PASSWORD: ci_password
 
-  # Job 2: AI review. Separate, so an AI failure never blocks the build.
+  # Job 2: AI review. Separate, so an AI outage never blocks the build.
   ai-review:
     runs-on: ubuntu-latest
     permissions:
@@ -65,3 +72,31 @@ jobs:
           github_action_config.auto_review: "true"
           github_action_config.auto_describe: "true"
           github_action_config.auto_improve: "false"
+
+  # Job 3: gate. Fails the PR if the AI labelled it with a security concern.
+  # Make this check "required" in branch protection to actually block merging.
+  ai-gate:
+    needs: ai-review
+    runs-on: ubuntu-latest
+    permissions:
+      issues: read
+      pull-requests: read
+
+    steps:
+      - name: Fail on security label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = await github.paginate(
+              github.rest.issues.listLabelsOnIssue,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+              }
+            );
+            const names = labels.map(l => l.name);
+            core.info('Labels on PR: ' + names.join(', '));
+            if (names.includes('Possible security concern')) {
+              core.setFailed('AI review flagged a possible security concern. Fix it, or remove the label if it is a false positive.');
+            }
