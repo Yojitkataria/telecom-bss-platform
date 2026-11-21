@@ -1,34 +1,69 @@
+
 name: CI & AI Code Review
 
+
+
 on:
+
 pull_request:
+
 types: [opened, synchronize, reopened]
 
+
+
 jobs:
+
 review-and-build:
+
 runs-on: ubuntu-latest
+
 permissions:
+
   contents: write
+
   pull-requests: write
+
   issues: write
 
+
+
 steps:
+
   - name: Checkout repository
+
     uses: actions/checkout@v4
 
+
+
   - name: PR Agent Code Review
+
     uses: the-pr-agent/pr-agent@main
+
     env:
+
       OPENAI_KEY: ${{ secrets.GEMINI_API_KEY }}
+
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       MODEL: "gemini/gemini-1.5-flash"
 
+
+
   - name: Set up JDK 21
+
     uses: actions/setup-java@v4
+
     with:
+
       java-version: '21'
+
       distribution: 'temurin'
+
       cache: maven
 
+
+
   - name: Build & Test Maven Project
+
     run: ./mvnw clean test
+
