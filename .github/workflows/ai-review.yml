@@ -5,25 +5,27 @@ on:
     types: [opened, synchronize, reopened]
 
 jobs:
-  review-and-build:
+  # Job 1: build and test. This is the real quality gate.
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ci_password
+          MYSQL_DATABASE: telecom_bss
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot -pci_password"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: PR Agent Code Review
-        uses: the-pr-agent/pr-agent@main
-        env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          OPENAI_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CONFIG.MODEL: "gemini/gemini-1.5-flash"
-          CONFIG.FALLBACK_MODELS: '["gemini/gemini-1.5-flash"]'
 
       - name: Set up JDK 21
         uses: actions/setup-java@v4
@@ -33,4 +35,33 @@ jobs:
           cache: maven
 
       - name: Build & Test Maven Project
-        run: ./mvnw clean test
+        run: |
+          chmod +x mvnw
+          ./mvnw -B clean test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/telecom_bss
+          SPRING_DATASOURCE_USERNAME: root
+          SPRING_DATASOURCE_PASSWORD: ci_password
+          DB_PASSWORD: ci_password
+
+  # Job 2: AI review. Separate, so an AI failure never blocks the build.
+  ai-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: PR Agent Code Review
+        uses: the-pr-agent/pr-agent@main
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use a model name that is currently available in Google AI Studio
+          config.model: "gemini/gemini-2.5-flash"
+          config.fallback_models: '["gemini/gemini-2.5-flash"]'
+          GOOGLE_AI_STUDIO.GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "true"
+          github_action_config.auto_improve: "false"
