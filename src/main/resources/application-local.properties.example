@@ -1,0 +1,2 @@
+spring.datasource.password=CHANGE_ME
+jwt.secret=CHANGE_ME_generate_with_openssl_rand_base64_48
