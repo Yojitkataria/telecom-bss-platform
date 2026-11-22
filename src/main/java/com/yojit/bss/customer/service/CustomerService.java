@@ -4,6 +4,7 @@ import com.yojit.bss.common.exception.ResourceNotFoundException;
 import com.yojit.bss.customer.dto.CustomerOnboardRequest;
 import com.yojit.bss.customer.dto.CustomerResponse;
 import com.yojit.bss.customer.entity.Customer;
+import com.yojit.bss.customer.enums.KycStatus;
 import com.yojit.bss.customer.repository.CustomerRepository;
 import com.yojit.bss.security.entity.User;
 import com.yojit.bss.security.repository.UserRepository;
@@ -33,7 +34,7 @@ public class CustomerService {
                 .dateOfBirth(request.getDateOfBirth())
                 .address(request.getAddress())
                 .city(request.getCity())
-                .kycStatus("PENDING")
+                .kycStatus(KycStatus.PENDING)
                 .kycDocumentType(request.getKycDocumentType())
                 .kycDocumentNo(request.getKycDocumentNo())
                 .build();

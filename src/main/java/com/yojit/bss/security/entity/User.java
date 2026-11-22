@@ -1,5 +1,6 @@
 package com.yojit.bss.security.entity;
 
+import com.yojit.bss.security.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -29,8 +30,9 @@ public class User implements UserDetails {
     @Column(name = "password_hash", nullable = false)
     private String password;
 
-    @Column(name = "role", columnDefinition = "ENUM('ADMIN', 'CSR', 'CUSTOMER')")
-    private String role;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", length = 20)
+    private Role role;
 
     @Builder.Default
     @Column(nullable = false)
@@ -41,9 +43,7 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Return ROLE_ prefix for Spring Security authority checks
-        String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-        return List.of(new SimpleGrantedAuthority(authority));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
     @Override

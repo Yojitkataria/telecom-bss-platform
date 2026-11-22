@@ -4,6 +4,7 @@ import com.yojit.bss.security.dto.AuthResponse;
 import com.yojit.bss.security.dto.LoginRequest;
 import com.yojit.bss.security.dto.RegisterRequest;
 import com.yojit.bss.security.entity.User;
+import com.yojit.bss.security.enums.Role;
 import com.yojit.bss.security.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,7 +31,7 @@ public class AuthService {
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role("CUSTOMER")
+                .role(Role.CUSTOMER)
                 .enabled(true)
                 .build();
 

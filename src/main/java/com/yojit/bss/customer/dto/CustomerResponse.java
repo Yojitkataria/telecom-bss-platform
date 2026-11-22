@@ -1,5 +1,6 @@
 package com.yojit.bss.customer.dto;
 
+import com.yojit.bss.customer.enums.KycStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +19,7 @@ public class CustomerResponse {
     private LocalDate dateOfBirth;
     private String address;
     private String city;
-    private String kycStatus;
+    private KycStatus kycStatus;
     private String kycDocumentType;
     private String kycDocumentNo;
 }

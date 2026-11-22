@@ -1,14 +1,16 @@
 package com.yojit.bss.security.dto;
 
+import com.yojit.bss.security.enums.Role;
+
 public class AuthResponse {
 
     private String token;
     private String email;
-    private String role;
+    private Role role;
 
     public AuthResponse() {}
 
-    public AuthResponse(String token, String email, String role) {
+    public AuthResponse(String token, String email, Role role) {
         this.token = token;
         this.email = email;
         this.role = role;
@@ -20,6 +22,6 @@ public class AuthResponse {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getRole() { return role; }
-    public void setRole(String role) { this.role = role; }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
 }

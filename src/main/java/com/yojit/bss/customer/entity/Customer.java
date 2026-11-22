@@ -1,5 +1,6 @@
 package com.yojit.bss.customer.entity;
 
+import com.yojit.bss.customer.enums.KycStatus;
 import com.yojit.bss.security.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -36,8 +37,9 @@ public class Customer {
     @Column(name = "city", length = 80)
     private String city;
 
-    @Column(name = "kyc_status", columnDefinition = "ENUM('PENDING', 'VERIFIED', 'REJECTED')")
-    private String kycStatus;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "kyc_status", length = 20)
+    private KycStatus kycStatus;
 
     @Column(name = "kyc_document_type", length = 30)
     private String kycDocumentType;
