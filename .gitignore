@@ -19,3 +19,6 @@ target/
 
 *.log
 
+application-local.properties
+.env
+
