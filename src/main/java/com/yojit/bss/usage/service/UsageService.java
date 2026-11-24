@@ -28,12 +28,21 @@ public class UsageService {
 
     @Transactional
     public void recordUsage(RecordUsageRequest request) {
+        if (request.getUsageType() == null) {
+            throw new IllegalArgumentException("Usage type cannot be null");
+        }
+
+        String type = request.getUsageType().toUpperCase();
+        if (!List.of("VOICE", "SMS", "DATA").contains(type)) {
+            throw new IllegalArgumentException("Invalid usage type: " + request.getUsageType() + ". Allowed types: VOICE, SMS, DATA");
+        }
+
         Subscription subscription = subscriptionRepository.findById(request.getSubscriptionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription not found ID: " + request.getSubscriptionId()));
 
         UsageRecord record = UsageRecord.builder()
                 .subscription(subscription)
-                .usageType(request.getUsageType().toUpperCase())
+                .usageType(type)
                 .quantity(request.getQuantity())
                 .usedAt(LocalDateTime.now())
                 .build();
@@ -49,7 +58,7 @@ public class UsageService {
         Plan plan = subscription.getPlan();
         LocalDateTime billingCycleStart = subscription.getActivatedAt() != null 
                 ? subscription.getActivatedAt() 
-                : LocalDateTime.now().minusDays(30);
+                : (subscription.getCreatedAt() != null ? subscription.getCreatedAt() : LocalDateTime.now().minusDays(30));
 
         // 1. Fetch Base Allowances with null checks
         int totalDataAllowed = plan.getDataMb() != null ? plan.getDataMb() : 0;
@@ -95,5 +104,20 @@ public class UsageService {
                 .smsAllowed(totalSmsAllowed)
                 .smsOverage(smsOverage)
                 .build();
+    }
+    
+    @Transactional(readOnly = true)
+    public BigDecimal calculateOverageCharge(Long subscriptionId) {
+        Subscription subscription = subscriptionRepository.findById(subscriptionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Subscription not found ID: " + subscriptionId));
+
+        UsageSummaryResponse summary = getUsageSummary(subscriptionId);
+        Plan plan = subscription.getPlan();
+
+        BigDecimal dataCost = summary.getDataOverageMb().multiply(plan.getOverageDataPerMb());
+        BigDecimal voiceCost = summary.getVoiceOverageMinutes().multiply(plan.getOverageVoicePerMin());
+        BigDecimal smsCost = summary.getSmsOverage().multiply(plan.getOverageSmsEach());
+
+        return dataCost.add(voiceCost).add(smsCost);
     }
 }
