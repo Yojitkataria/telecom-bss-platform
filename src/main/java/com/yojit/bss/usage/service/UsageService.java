@@ -107,11 +107,11 @@ public class UsageService {
     }
     
     @Transactional(readOnly = true)
-    public BigDecimal calculateOverageCharge(Long subscriptionId, LocalDateTime cycleStart) {
-        UsageSummaryResponse summary = getUsageSummary(subscriptionId);
+    public BigDecimal calculateOverageCharge(Long subscriptionId) {
         Subscription subscription = subscriptionRepository.findById(subscriptionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscription not found ID: " + subscriptionId));
-        
+
+        UsageSummaryResponse summary = getUsageSummary(subscriptionId);
         Plan plan = subscription.getPlan();
 
         BigDecimal dataCost = summary.getDataOverageMb().multiply(plan.getOverageDataPerMb());
