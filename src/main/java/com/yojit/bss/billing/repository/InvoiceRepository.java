@@ -13,4 +13,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     List<Invoice> findByCustomerId(Long customerId);
 
     List<Invoice> findBySubscriptionId(Long subscriptionId);
+    List<Invoice> findByStatusAndDueDateBefore(String status, LocalDate dueDate);
+
+
 }
