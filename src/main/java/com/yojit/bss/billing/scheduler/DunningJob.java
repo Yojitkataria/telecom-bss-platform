@@ -30,10 +30,11 @@ public class DunningJob {
         log.info("Starting automated dunning job for overdue invoices...");
 
         LocalDate today = LocalDate.now();
-        // Fetch only GENERATED invoices whose due date has passed
-        List<Invoice> overdueInvoices = invoiceRepository.findByStatusAndDueDateBefore("GENERATED", today);
 
-        for (Invoice invoice : overdueInvoices) {
+        // 1. Transition newly overdue invoices (GENERATED -> OVERDUE)
+        List<Invoice> newlyOverdueInvoices = invoiceRepository.findByStatusAndDueDateBefore("GENERATED", today);
+
+        for (Invoice invoice : newlyOverdueInvoices) {
             invoice.setStatus("OVERDUE");
             invoiceRepository.save(invoice);
 
@@ -50,6 +51,20 @@ public class DunningJob {
                     "Your invoice " + invoice.getInvoiceNo() + " is overdue. Subscription suspended. Please pay ₹" + invoice.getTotalAmount() + " immediately."
             );
         }
-        log.info("Dunning job finished. Processed {} overdue invoices.", overdueInvoices.size());
+
+        // 2. Send follow-up reminders for existing OVERDUE invoices
+        List<Invoice> existingOverdueInvoices = invoiceRepository.findByStatusAndDueDateBefore("OVERDUE", today);
+
+        for (Invoice invoice : existingOverdueInvoices) {
+            notificationService.sendNotification(
+                    invoice.getCustomer(),
+                    "EMAIL",
+                    "Reminder: Overdue Invoice " + invoice.getInvoiceNo(),
+                    "Your account remains suspended due to overdue invoice " + invoice.getInvoiceNo() + ". Amount due: ₹" + invoice.getTotalAmount()
+            );
+        }
+
+        log.info("Dunning job finished. Newly suspended: {}, Reminders sent: {}", 
+                newlyOverdueInvoices.size(), existingOverdueInvoices.size());
     }
 }
