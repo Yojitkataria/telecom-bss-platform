@@ -29,28 +29,27 @@ public class DunningJob {
     public void executeDunningProcess() {
         log.info("Starting automated dunning job for overdue invoices...");
 
-        List<Invoice> invoices = invoiceRepository.findAll();
         LocalDate today = LocalDate.now();
+        // Fetch only GENERATED invoices whose due date has passed
+        List<Invoice> overdueInvoices = invoiceRepository.findByStatusAndDueDateBefore("GENERATED", today);
 
-        for (Invoice invoice : invoices) {
-            if ("GENERATED".equalsIgnoreCase(invoice.getStatus()) && invoice.getDueDate().isBefore(today)) {
-                invoice.setStatus("OVERDUE");
-                invoiceRepository.save(invoice);
+        for (Invoice invoice : overdueInvoices) {
+            invoice.setStatus("OVERDUE");
+            invoiceRepository.save(invoice);
 
-                Subscription sub = invoice.getSubscription();
-                if ("ACTIVE".equalsIgnoreCase(sub.getStatus())) {
-                    sub.setStatus("SUSPENDED");
-                    subscriptionRepository.save(sub);
-                }
-
-                notificationService.sendNotification(
-                        invoice.getCustomer(),
-                        "SMS",
-                        "Account Suspended - Overdue Bill",
-                        "Your invoice " + invoice.getInvoiceNo() + " is overdue. Subscription suspended. Please pay ₹" + invoice.getTotalAmount() + " immediately."
-                );
+            Subscription sub = invoice.getSubscription();
+            if ("ACTIVE".equalsIgnoreCase(sub.getStatus())) {
+                sub.setStatus("SUSPENDED");
+                subscriptionRepository.save(sub);
             }
+
+            notificationService.sendNotification(
+                    invoice.getCustomer(),
+                    "SMS",
+                    "Account Suspended - Overdue Bill",
+                    "Your invoice " + invoice.getInvoiceNo() + " is overdue. Subscription suspended. Please pay ₹" + invoice.getTotalAmount() + " immediately."
+            );
         }
-        log.info("Dunning job execution finished.");
+        log.info("Dunning job finished. Processed {} overdue invoices.", overdueInvoices.size());
     }
 }

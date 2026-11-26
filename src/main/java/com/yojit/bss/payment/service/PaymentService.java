@@ -38,7 +38,7 @@ public class PaymentService {
             throw new IllegalStateException("Invoice " + invoice.getInvoiceNo() + " is already paid");
         }
 
-        String txnRef = "TXN-" + UUID.randomUUID().toString().substring(0, 10).toUpperCase();
+        String txnRef = "TXN-" + System.currentTimeMillis() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
 
         Payment payment = Payment.builder()
                 .invoice(invoice)
